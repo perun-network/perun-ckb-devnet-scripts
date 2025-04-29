@@ -1,0 +1,8 @@
+accounts
+data
+specs
+ckb-miner.toml
+ckb.toml
+fundingtx.json
+default.db-options
+system_scripts
