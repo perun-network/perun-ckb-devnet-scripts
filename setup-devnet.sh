@@ -8,7 +8,7 @@ set -eu
 # registration of two accounts governing the genesis cells.
 
 ACCOUNTS_DIR="accounts"
-PERUN_CONTRACTS_DIR="contracts"
+PERUN_CONTRACTS_DIR="contract"
 
 if [ -d $ACCOUNTS_DIR ]; then
   rm -rf $ACCOUNTS_DIR/*
@@ -38,9 +38,7 @@ fi
 # Build all required contracts for Perun.
 DEVNET=$(pwd)
 cd $PERUN_CONTRACTS_DIR
-capsule build --release
-# If debug contracts are wanted:
-# capsule build
+source ./setup_env.sh build && make build
 cd $DEVNET
 
 # Genesis cell #1
@@ -77,6 +75,7 @@ ckb init --chain dev --ba-arg $MINER_LOCK_ARG --ba-message "0x" --force
 
 # Make the scripts owned by the miner.
 sed -i "s/args =.*$/args = \"$MINER_LOCK_ARG\"/" $PERUN_CONTRACTS_DIR/deployment/dev/deployment.toml
+sed -i "s/args =.*$/args = \"$MINER_LOCK_ARG\"/" $PERUN_CONTRACTS_DIR/deployment/dev/deployment_vc.toml
 # Use the debug versions of the contracts.
 # sed -i "s/release/debug/" $PERUN_CONTRACTS_DIR/deployment/dev/deployment.toml
 
