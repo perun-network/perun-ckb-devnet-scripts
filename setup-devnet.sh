@@ -8,7 +8,10 @@ set -eu
 # registration of two accounts governing the genesis cells.
 
 ACCOUNTS_DIR="accounts"
-PERUN_CONTRACTS_DIR="contract"
+PERUN_CONTRACTS_DIR="contracts"
+DEVNET=$PWD
+DEPLYOMENT_CONFIG="$DEVNET/deployment.toml"
+DEPLOYMENT_VC_CONFIG="$DEVNET/deployment_vc.toml"
 
 if [ -d $ACCOUNTS_DIR ]; then
   rm -rf $ACCOUNTS_DIR/*
@@ -36,7 +39,6 @@ if [ -f "default.db-options" ]; then
 fi
 
 # Build all required contracts for Perun.
-DEVNET=$(pwd)
 cd $PERUN_CONTRACTS_DIR
 source ./setup_env.sh build && make build
 cd $DEVNET
@@ -74,8 +76,8 @@ create_account "ingrid"
 ckb init --chain dev --ba-arg $MINER_LOCK_ARG --ba-message "0x" --force
 
 # Make the scripts owned by the miner.
-sed -i "s/args =.*$/args = \"$MINER_LOCK_ARG\"/" $PERUN_CONTRACTS_DIR/deployment/dev/deployment.toml
-sed -i "s/args =.*$/args = \"$MINER_LOCK_ARG\"/" $PERUN_CONTRACTS_DIR/deployment/dev/deployment_vc.toml
+sed -i "s/args =.*$/args = \"$MINER_LOCK_ARG\"/" $DEPLYOMENT_CONFIG
+sed -i "s/args =.*$/args = \"$MINER_LOCK_ARG\"/" $DEPLOYMENT_VC_CONFIG
 # Use the debug versions of the contracts.
 # sed -i "s/release/debug/" $PERUN_CONTRACTS_DIR/deployment/dev/deployment.toml
 

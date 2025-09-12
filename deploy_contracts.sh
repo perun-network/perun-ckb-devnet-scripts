@@ -4,13 +4,16 @@ set -eu
 [ -n "${DEBUG:-}" ] && set -x || true
 
 ACCOUNTS_DIR="accounts"
-PERUN_CONTRACTS_DIR="contract"
+PERUN_CONTRACTS_DIR="contracts"
 SYSTEM_SCRIPTS_DIR="system_scripts"
 DEVNET_DIR="$PWD"
 DEPLOYMENT_INFO="info"
 DEPLOYMENT_INFO_VC="info_vc"
 MIGRATION="migrations/dev"
 MIGRATION_VC="migrations_vc/dev"
+DEPLYOMENT_CONFIG="$DEVNET_DIR/deployment.toml"
+DEPLOYMENT_VC_CONFIG="$DEVNET_DIR/deployment_vc.toml"
+CONTRACTS_MIGRATION_PATH="$PERUN_CONTRACTS_DIR/$MIGRATION"
 genesis=$( cat ./accounts/genesis-2.txt | awk '/testnet/ {print$2}' | head -n 1)
 
 if [ -f "$DEPLOYMENT_INFO.json" ]; then
@@ -35,7 +38,7 @@ fi
 
 echo "Deploying normal contracts..."
 expect << EOF
-spawn ckb-cli deploy gen-txs --deployment-config ./deployment/dev/deployment.toml --migration-dir ./$MIGRATION  --from-address $genesis  --sign-now  --info-file $DEPLOYMENT_INFO.json
+spawn ckb-cli deploy gen-txs --deployment-config $DEPLYOMENT_CONFIG --migration-dir ./$MIGRATION  --from-address $genesis  --sign-now  --info-file $DEPLOYMENT_INFO.json
 expect "Password:"
 send "\r"
 expect eof
@@ -54,7 +57,7 @@ echo "Waiting for 10 seconds before deploying vc contracts..."
 sleep 10.0
 echo "Deplyoing vc contracts..."
 expect << EOF
-spawn ckb-cli deploy gen-txs --deployment-config ./deployment/dev/deployment_vc.toml --migration-dir ./$MIGRATION_VC  --from-address $genesis  --sign-now  --info-file $DEPLOYMENT_INFO_VC.json
+spawn ckb-cli deploy gen-txs --deployment-config $DEPLOYMENT_VC_CONFIG --migration-dir ./$MIGRATION_VC  --from-address $genesis  --sign-now  --info-file $DEPLOYMENT_INFO_VC.json
 expect "Password:"
 send "\r"
 expect eof
@@ -97,9 +100,9 @@ timestamp=$(date '+%Y-%m-%d-%H%M%S')
 rm ./$DEPLOYMENT_INFO.json
 rm ./$DEPLOYMENT_INFO_VC.json
 
-SUDT_TX_HASH=$(cat ./contract/migrations/dev/*.json | jq .cell_recipes[0].tx_hash)
-SUDT_TX_INDEX=$(cat ./contract/migrations/dev/*.json | jq .cell_recipes[0].index)
-SUDT_DATA_HASH=$(cat ./contract/migrations/dev/*.json | jq .cell_recipes[0].data_hash)
+SUDT_TX_HASH=$(cat ./$CONTRACTS_MIGRATION_PATH/*.json | jq .cell_recipes[0].tx_hash)
+SUDT_TX_INDEX=$(cat ./$CONTRACTS_MIGRATION_PATH/*.json | jq .cell_recipes[0].index)
+SUDT_DATA_HASH=$(cat ./$CONTRACTS_MIGRATION_PATH/*.json | jq .cell_recipes[0].data_hash)
 echo "Fetching genesis cell done."
 # TODO: This only works as long as the tx index is 0-9.
 jq ".items.sudt.script_id.code_hash = $SUDT_DATA_HASH | .items.sudt.cell_dep.out_point.tx_hash = $SUDT_TX_HASH | .items.sudt.cell_dep.out_point.index = \"0x$SUDT_TX_INDEX\"" ./sudt-celldep-template.json > $SYSTEM_SCRIPTS_DIR/sudt-celldep.json
