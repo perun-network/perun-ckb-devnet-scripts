@@ -7,25 +7,29 @@ ingrid=$(cat accounts/ingrid.txt | awk '/testnet/ && !found {print $2; found=1}'
 
 genesis_tx_hash=$(ckb-cli wallet get-live-cells --address $genesis | awk '/tx_hash/ {print $2}')
 genesis_tx_index=$(ckb-cli wallet get-live-cells --address $genesis | awk '/output_index/ && !found {print $2; found=1}')
-genesis_tx_amount=$(ckb-cli wallet get-live-cells --address $genesis | awk '/capacity/ {print $3}')
+# genesis_tx_amount=$(ckb-cli wallet get-live-cells --address $genesis | awk '/capacity/ {print $3}')
+genesis_tx_amount=$(ckb-cli wallet get-live-cells --address $genesis | awk '/capacity/ {sum+=$3} END{print sum}')
 FUNDINGTX="fundingtx.json"
 FUNDING_AMOUNT=1000
-CHANGE_AMOUNT=$(python3 -c "print(\"{:.8f}\".format($genesis_tx_amount - 3.0 * 10.0 * $FUNDING_AMOUNT - 1.0))")
+CHANGE_AMOUNT=$(python -c "print(\"{:.8f}\".format($genesis_tx_amount - 3.0 * 10.0 * $FUNDING_AMOUNT - 1.0))")
+echo "DEBUG CHANGE_AMOUNT: '$CHANGE_AMOUNT'"
 
 add_output() {
   ckb-cli tx add-output --tx-file $FUNDINGTX --to-sighash-address $1 --capacity $2
 }
 
+echo "Funding accounts..."
 ckb-cli tx init --tx-file $FUNDINGTX
 
+echo "Adding outputs for Alice"
 for ((i=1; i <= 10; i++)); do
   add_output $alice $FUNDING_AMOUNT
 done
-
+echo "Adding outputs for Bob"
 for ((i=1; i <= 10; i++)); do
   add_output $bob $FUNDING_AMOUNT
 done
-
+echo "Adding outputs for Ingrid"
 for ((i=1; i <= 10; i++)); do
   add_output $ingrid $FUNDING_AMOUNT
 done
